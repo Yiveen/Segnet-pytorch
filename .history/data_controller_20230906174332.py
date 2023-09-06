@@ -14,17 +14,13 @@ import os
 from PIL import ImageEnhance
 from PIL import ImageFilter
 
-random.seed(2024)
-
 class SegDataset(data.Dataset):
-    def __init__(self, root_dir, txtlist, backtxt, use_noise, length):
+    def __init__(self, root_dir, txtlist, use_noise, length):
         self.path = []
         self.real_path = []
-        self.back = []
         self.use_noise = use_noise
         self.root = root_dir
         input_file = open(txtlist)
-        backfile = open(backtxt)
         while 1:
             input_line = input_file.readline()
             if not input_line:
@@ -34,21 +30,11 @@ class SegDataset(data.Dataset):
                 self.path.append(copy.deepcopy(input_line))
             if input_line[4:].startswith() == 'change':
                 self.real_path.append(copy.deepcopy(input_line))
-        
-        while 1:
-            input_line = backfile.readline()
-            if not input_line:
-                break
-            if input_line[-1:] == '\n':
-                input_line = input_line[:-1]
-                self.back.append(copy.deepcopy(input_line))
-            
         input_file.close()
 
         self.length = length
         self.data_len = len(self.path)
         self.real_data_len = len(self.real_path)
-        self.back_len = len(self.back)
 
         self.trancolor = transforms.ColorJitter(0.2, 0.2, 0.2, 0.05)
         self.norm = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
@@ -57,32 +43,27 @@ class SegDataset(data.Dataset):
     def __getitem__(self, idx):
         index = random.randint(0, self.data_len - 10)
 
-        label = np.array(Image.open('{0}/{1}/segementation{1}.png'.format(self.root, self.path[index])))
+        label = np.array(Image.open('{0}/{1}/Image{1}.png'.format(self.root, self.path[index])))
         meta = scio.loadmat('{0}/{1}-meta.mat'.format(self.root, self.path[index]))
         if not self.use_noise:
-            rgb = np.array(Image.open('{0}/{1}/Image{1}.png'.format(self.root, self.path[index])).convert("RGB"))
+            rgb = np.array(Image.open('{0}/{1}/segementation{1}.png'.format(self.root, self.path[index])).convert("RGB"))
         else:
-            rgb = np.array(self.trancolor(Image.open('{0}/{1}/Image{1}.png'.format(self.root, self.path[index])).convert("RGB")))
+            rgb = np.array(self.trancolor(Image.open('{0}/{1}/segementation{1}.png'.format(self.root, self.path[index])).convert("RGB")))
 
-        if self.path[index] in self.real_path:
+        if self.path[index][:8] == 'data_syn':
+            rgb = Image.open('{0}/{1}/Image{1}.png'.format(self.root, self.path[index])).convert("RGB")
             rgb = ImageEnhance.Brightness(rgb).enhance(1.5).filter(ImageFilter.GaussianBlur(radius=0.8))
             rgb = np.array(self.trancolor(rgb))
-            
-            seed = random.randint(0, self.back_len)
-            back = Image.open('{0}/backgound/{1}.jpeg'.format(self.root, self.back[seed]))
-            back = back.resize((640, 640), Image.ANTIALIAS)
-            crop_size = (640, 480)
-            left = random.randint(0, 640 - crop_size[0])
-            top = random.randint(0, 640 - crop_size[1])
-            right = left + crop_size[0]
-            bottom = top + crop_size[1]
-            back = np.array(back.crop((left, top, right, bottom)))
-   
+            seed = random.randint(0, self.real_data_len)
+            back = np.array(self.trancolor(Image.open('{0}/{1}-color.png'.format(self.root, self.path[seed])).convert("RGB")))
+            back_label = np.array(Image.open('{0}/{1}/segementation{1}.png'.format(self.root, self.path[seed])))
             mask = ma.getmaskarray(ma.masked_equal(label, 0))
             back = np.transpose(back, (2, 0, 1))
             rgb = np.transpose(rgb, (2, 0, 1))
-
-            rgb = back * mask + rgb * (1 - mask)
+            rgb = rgb + np.random.normal(loc=0.0, scale=5.0, size=rgb.shape)
+            rgb = back * mask + rgb
+            label = back_label * mask + label
+            rgb = np.transpose(rgb, (1, 2, 0))
             #scipy.misc.imsave('embedding_final/rgb_{0}.png'.format(index), rgb)
             #scipy.misc.imsave('embedding_final/label_{0}.png'.format(index), label)
             

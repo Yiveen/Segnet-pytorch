@@ -35,7 +35,7 @@ parser.add_argument('--logs_path', default='logs/', help="path to save logs")
 parser.add_argument('--model_save_path', default='trained_models/', help="path to save models")
 parser.add_argument('--log_dir', default='logs/', help="path to save logs")
 # parser.add_argument('--resume_model', default='model_current.pth', help="resume model name")
-parser.add_argument('--resume_model', default='model_39_0.11677467995788902.pth', help="resume model name")
+parser.add_argument('--resume_model', default='model_46_0.11681703488714992.pth', help="resume model name")
 opt = parser.parse_args()
 
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"

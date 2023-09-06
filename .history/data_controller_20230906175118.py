@@ -67,22 +67,16 @@ class SegDataset(data.Dataset):
         if self.path[index] in self.real_path:
             rgb = ImageEnhance.Brightness(rgb).enhance(1.5).filter(ImageFilter.GaussianBlur(radius=0.8))
             rgb = np.array(self.trancolor(rgb))
-            
             seed = random.randint(0, self.back_len)
-            back = Image.open('{0}/backgound/{1}.jpeg'.format(self.root, self.back[seed]))
-            back = back.resize((640, 640), Image.ANTIALIAS)
-            crop_size = (640, 480)
-            left = random.randint(0, 640 - crop_size[0])
-            top = random.randint(0, 640 - crop_size[1])
-            right = left + crop_size[0]
-            bottom = top + crop_size[1]
-            back = np.array(back.crop((left, top, right, bottom)))
-   
+            back = np.array(self.trancolor(Image.open('{0}/{1}-color.png'.format(self.root, self.path[seed])).convert("RGB")))
+            back_label = np.array(Image.open('{0}/backgound/{1}.jpeg'.format(self.root, self.back[seed])))
             mask = ma.getmaskarray(ma.masked_equal(label, 0))
             back = np.transpose(back, (2, 0, 1))
             rgb = np.transpose(rgb, (2, 0, 1))
-
-            rgb = back * mask + rgb * (1 - mask)
+            rgb = rgb + np.random.normal(loc=0.0, scale=5.0, size=rgb.shape)
+            rgb = back * mask + rgb
+            label = back_label * mask + label
+            rgb = np.transpose(rgb, (1, 2, 0))
             #scipy.misc.imsave('embedding_final/rgb_{0}.png'.format(index), rgb)
             #scipy.misc.imsave('embedding_final/label_{0}.png'.format(index), label)
             

@@ -56,7 +56,7 @@ for j, data in enumerate(test_dataloader, 0):
     # print('out.shape',out.shape)    #out.shape (480, 640, 22)
 
     crops = []
-    for i in range(7):
+    for i in range(22):
         if i == 0:
             arr = out[:,:,i]<0  # true false map
         else:

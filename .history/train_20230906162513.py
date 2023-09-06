@@ -26,20 +26,20 @@ from utils import setup_logger
 
 # train the segmentation, python train.py --dataset_root=../datasets/ycb/YCB_Video_Dataset
 parser = argparse.ArgumentParser()
-parser.add_argument('--dataset_root', default='/data/net/dl_data/ProjectDatasets_bkx/VIMA_dataset/semantic_segmentation', help="dataset root dir (''YCB_Video Dataset'')")
+parser.add_argument('--dataset_root', default='/data/ssd1/kb/densefusion/src/DenseFusion/datasets/ycb/YCB_Video_Dataset', help="dataset root dir (''YCB_Video Dataset'')")
 parser.add_argument('--batch_size', default=12, help="batch size")       # 3(single gpu)    12(4 gpus)
 parser.add_argument('--n_epochs', default=600, help="epochs to train")
-parser.add_argument('--workers', type=int, default=16, help='number of data loading workers')
+parser.add_argument('--workers', type=int, default=10, help='number of data loading workers')
 parser.add_argument('--lr', default=0.0001, help="learning rate")        # 0.0001
 parser.add_argument('--logs_path', default='logs/', help="path to save logs")
 parser.add_argument('--model_save_path', default='trained_models/', help="path to save models")
 parser.add_argument('--log_dir', default='logs/', help="path to save logs")
 # parser.add_argument('--resume_model', default='model_current.pth', help="resume model name")
-parser.add_argument('--resume_model', default='model_39_0.11677467995788902.pth', help="resume model name")
+parser.add_argument('--resume_model', default='model_46_0.11681703488714992.pth', help="resume model name")
 opt = parser.parse_args()
 
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"]="0,1,2,3,4,5,6,7"  # specify which GPU(s) to be used, with 'nvidia-smi' to check which to use
+os.environ["CUDA_VISIBLE_DEVICES"]="0,1,2,3"  # specify which GPU(s) to be used, with 'nvidia-smi' to check which to use
 
 def main():
     opt.manualSeed = random.randint(1, 10000)
@@ -61,7 +61,7 @@ def main():
     print("device count:", torch.cuda.device_count())
     if torch.cuda.device_count()>1:
         print("Let's use", torch.cuda.device_count(), "GPUS!")
-        device_ids = [0,1,2,3,4,5,6,7]
+        device_ids = [0,1,2,3]
         model = nn.DataParallel(model,device_ids=device_ids)
     else:
         model = nn.DataParallel(model,device_ids=[0])    # change the number by yourself plz
