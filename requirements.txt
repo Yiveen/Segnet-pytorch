@@ -1,0 +1,9 @@
+numpy
+torch
+Pillow
+torch
+torchvision
+scipy
+tensorboardX
+opencv-python
+matplotlib

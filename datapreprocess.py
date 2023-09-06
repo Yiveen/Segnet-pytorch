@@ -3,8 +3,8 @@ import random
 import numpy as np
 
 def main():
-    image_dir = ''
-    image_names = os.listdir(image_dir)
+    image_dir = 'mini_dataset_vima'
+    image_names = [filename for filename in os.listdir(image_dir) if not filename.endswith('.txt')]
     random.shuffle(image_names)
     
     total_images = len(image_names)
@@ -20,29 +20,30 @@ def main():
     test_set = image_names[val_split:]
     
     # 为每个类型选择一定数量的文件，并添加后缀"changed"
-    num_files_per_type = 5  # 选择每个类型的文件数量
-    random_numbers = np.random.randint(0, 1001, num_files_per_type)
-    random_numbers_list = random_numbers.tolist()   
-
-    # 初始化用于存储已处理文件名的列表
-    changed_files = []
+    num_files_per_type = 1  # 选择每个类型的文件数量 
 
     # 遍历训练集、验证集和测试集
     for dataset in [train_set, val_set, test_set]:
-
-        for filename in dataset:
-            number = int(filename)
-            if number in random_numbers_list:
-                new_filename = filename.split('.')[0] + '_changed' 
-                os.rename(os.path.join(image_dir, filename), os.path.join(image_dir, new_filename))
+        # random_numbers = np.random.randint(0, len(dataset), num_files_per_type)
+        # random_numbers_list = random_numbers.tolist()  
+        # for filename in dataset:
+        #     number = int(filename)
+        #     if number in random_numbers_list:
+        sampled_indices = random.sample(range(len(dataset)), 1)
+        for indice in sampled_indices:
+                new_filename = str(dataset[indice]) + '_changed'
+                dataset[indice] = new_filename 
+                # os.rename(os.path.join(image_dir, filename), os.path.join(image_dir, new_filename))
                 
-    with open('train.txt', 'w') as f:
+    with open(str(image_dir)+ '/' + 'train.txt', 'w') as f:
         f.write('\n'.join(train_set))
+        
+        with open('background.txt', 'w') as f:
 
-    with open('val.txt', 'w') as f:
+    with open(str(image_dir)+ '/' + 'val.txt', 'w') as f:
         f.write('\n'.join(val_set))
 
-    with open('test.txt', 'w') as f:
+    with open(str(image_dir)+ '/' + 'test.txt', 'w') as f:
         f.write('\n'.join(test_set))
 
 

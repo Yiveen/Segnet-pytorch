@@ -26,20 +26,22 @@ from utils import setup_logger
 
 # train the segmentation, python train.py --dataset_root=../datasets/ycb/YCB_Video_Dataset
 parser = argparse.ArgumentParser()
-parser.add_argument('--dataset_root', default='/data/net/dl_data/ProjectDatasets_bkx/VIMA_dataset/semantic_segmentation', help="dataset root dir (''YCB_Video Dataset'')")
-parser.add_argument('--batch_size', default=12, help="batch size")       # 3(single gpu)    12(4 gpus)
+# parser.add_argument('--dataset_root', default='/data/net/dl_data/ProjectDatasets_bkx/VIMA_dataset/semantic_segmentation', help="dataset root dir (''YCB_Video Dataset'')")
+parser.add_argument('--dataset_root', default='mini_dataset_vima', help="dataset root dir (''YCB_Video Dataset'')")
+parser.add_argument('--batch_size', default=2, help="batch size")       # 3(single gpu)    12(4 gpus)
 parser.add_argument('--n_epochs', default=600, help="epochs to train")
 parser.add_argument('--workers', type=int, default=16, help='number of data loading workers')
 parser.add_argument('--lr', default=0.0001, help="learning rate")        # 0.0001
 parser.add_argument('--logs_path', default='logs/', help="path to save logs")
-parser.add_argument('--model_save_path', default='trained_models/', help="path to save models")
+parser.add_argument('--model_save_path', default='checkpoints/', help="path to save models")
 parser.add_argument('--log_dir', default='logs/', help="path to save logs")
 # parser.add_argument('--resume_model', default='model_current.pth', help="resume model name")
 parser.add_argument('--resume_model', default='model_39_0.11677467995788902.pth', help="resume model name")
 opt = parser.parse_args()
 
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"]="0,1,2,3,4,5,6,7"  # specify which GPU(s) to be used, with 'nvidia-smi' to check which to use
+# os.environ["CUDA_VISIBLE_DEVICES"]="0,1,2,3,4,5,6,7"  # specify which GPU(s) to be used, with 'nvidia-smi' to check which to use
+os.environ["CUDA_VISIBLE_DEVICES"]="0"  # specify which GPU(s) to be used, with 'nvidia-smi' to check which to use
 
 def main():
     opt.manualSeed = random.randint(1, 10000)
@@ -47,11 +49,11 @@ def main():
     torch.manual_seed(opt.manualSeed)
     # dataset = SegDataset(opt.dataset_root, '../datasets/ycb/dataset_config/train_data_list_debug.txt', True, 30)
 
-    dataset = SegDataset(opt.dataset_root, '../datasets/ycb/dataset_config/train_data_list.txt', True, 5000)
+    dataset = SegDataset(opt.dataset_root, 'mini_dataset_vima/train.txt', 'background/backgrounds.txt',True)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=opt.batch_size, shuffle=True, num_workers=int(opt.workers))
     # test_dataset = SegDataset(opt.dataset_root, '../datasets/ycb/dataset_config/train_data_list_debug.txt', False, 30)
 
-    test_dataset = SegDataset(opt.dataset_root, '../datasets/ycb/dataset_config/test_data_list.txt', False, 1000)
+    test_dataset = SegDataset(opt.dataset_root, 'mini_dataset_vima/val.txt','background/backgrounds.txt',False)
     test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=True, num_workers=int(opt.workers))
 
     print(len(dataset), len(test_dataset))  # 5000 1000
@@ -66,10 +68,12 @@ def main():
     else:
         model = nn.DataParallel(model,device_ids=[0])    # change the number by yourself plz
 
+    delet_list = ['module.conv11d.bias','module.conv11d.weight']
     if opt.resume_model != '':
         print('resume train model')
         checkpoint = torch.load('{0}/{1}'.format(opt.model_save_path, opt.resume_model))
-        model.load_state_dict(checkpoint)
+        new_checkpoint = {k: v for k, v in checkpoint.items() if k not in delet_list}
+        model.load_state_dict(new_checkpoint,strict = False)
         for log in os.listdir(opt.log_dir):
             os.remove(os.path.join(opt.log_dir, log))
 
